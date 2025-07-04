@@ -3,24 +3,24 @@ import * as fs from "fs";
 import "dotenv/config";
 
 const audio = [
-  {
-    format: "mp3",
-    total: 9, //10
-    extension: "mp3",
-    chunks: [],
-  },
-  {
-    format: "alaw",
-    total: 9,
-    extension: "alaw",
-    chunks: [],
-  },
-  {
-    format: "mulaw",
-    total: 9,
-    extension: "mulaw",
-    chunks: [],
-  },
+  // {
+  //   format: "mp3",
+  //   total: 9, //10
+  //   extension: "mp3",
+  //   chunks: [],
+  // },
+  // {
+  //   format: "alaw",
+  //   total: 9,
+  //   extension: "alaw",
+  //   chunks: [],
+  // },
+  // {
+  //   format: "mulaw",
+  //   total: 9,
+  //   extension: "mulaw",
+  //   chunks: [],
+  // },
   {
     format: "pcm16",
     total: 180,
@@ -50,30 +50,24 @@ const buildAudio = () => {
 
 //const getAllAudio = buildAudio();
 const playAudio = (audio, callback) => {
-  if (audio.length > 0) {
-    const format = audio[0];
-    if (format) {
-      const chunk = format.chunks.shift();
-      if (format.chunks.length === 0) {
-        audio.shift();
-      }
-      if (chunk) {
-        callback(
-          format.format,
-          `label ${format.format} ${format.total - format.chunks.length}`,
-          chunk,
-          () => {
-            if (format.chunks.length === 0) {
-              audio.shift();
-            }
-            playAudio(audio, callback);
-          }
-        );
-      } else {
-        audio.shift();
-      }
-    }
+  if (audio.length === 0) return;
+
+  const format = audio[0];
+  if (!format || format.chunks.length === 0) {
+    audio.shift();
+    playAudio(audio, callback);
+    return;
   }
+
+  const chunk = format.chunks.shift();
+  callback(
+    format.format,
+    `label ${format.format} ${format.total - format.chunks.length}`,
+    chunk,
+    () => {
+      playAudio(audio, callback);
+    }
+  );
 };
 
 const socket = io(process.env.SOCKET_SERVER, {
@@ -105,6 +99,10 @@ socket.on("checkPoint", (data) => {
   console.log("checkPoint", data);
 });
 
+socket.on("dtmf", (data) => {
+  console.log("dtmf", data);
+});
+
 socket.on("hangup", (data) => {
   console.log("hangup call", data);
 });
@@ -116,16 +114,26 @@ socket.on("dialStatus", async (status) => {
     //   setTimeout(resolve, 1000);
     // });
 
+    //return;
+
     socket.emit("checkPoint", {
       sessionId: status.sessionId,
       name: "started initial " + new Date().toISOString(),
     });
 
+    setTimeout(() => {
+      socket.emit("dtmf", {
+        sessionId: status.sessionId,
+        digit: "5",
+        duration: 200,
+      });
+    }, 3000);
+
     let i = 0;
     playAudio(
       allAudioSession[status.sessionId],
       (format, label, audioBuffer, next) => {
-        console.log("play", label);
+        // console.log("play", label);
         socket.emit(
           "audio",
           {
@@ -135,11 +143,11 @@ socket.on("dialStatus", async (status) => {
           },
           (ack) => {
             //console.log("ack", ack);
-            next();
+            //next();
           }
         );
 
-        //setTimeout(next, 100);
+        setTimeout(next, 100);
         i++;
       }
     );
@@ -155,15 +163,16 @@ socket.on("error", (data) => {
 });
 
 socket.on("audio", (data) => {
-  // socket.emit(
-  //   "audio",
-  //   {
-  //     sessionId: data.sessionId,
-  //     audioData: data.audioData,
-  //     audioFormat: "pcm16",
-  //   },
-  //   (ack) => {
-  //     //console.log("ack", ack);
-  //   }
-  // );
+  return;
+  socket.emit(
+    "audio",
+    {
+      sessionId: data.sessionId,
+      audioData: data.audioData,
+      audioFormat: "pcm16",
+    },
+    (ack) => {
+      //console.log("ack", ack);
+    }
+  );
 });

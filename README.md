@@ -1,7 +1,7 @@
 # API Documentation - Outgoing Call Service
 
-**Version:** 1.0.2  
-**Last Updated:** June 2025  
+**Version:** 1.0.3  
+**Last Updated:** July 2025  
 **Base URL:** `https://api-call.optimaccs.com`
 
 ---
@@ -164,20 +164,22 @@ The following diagram illustrates the typical event flow for an outgoing call se
 
 ```
 Client                    Server
-  |                         |
-  |--- POST /pbx/call ----->|
+  |                        |
+  |--- POST /pbx/call ---->|
   |<-- sessionId ----------|
-  |                         |
+  |                        |
   |<-- newSession ---------|
   |--- joinRoom ---------->|
   |<-- roomJoined ---------|
-  |                         |
+  |                        |
   |<-- dialStatus ---------|
   |--- audio ------------->|
   |<-- audio --------------|
-   |--- checkPoint ------------->|
-  |<-- checkPoint --------------|
-  |                         |
+  |---  checkPoint ------->|
+  |<-- checkPoint ---------|
+   |--------  dtmf ------->|
+  |<-------- dtmf ---------|
+  |                        |
   |--- hangup ------------>|
   |<-- hangup -------------|
 ```
@@ -226,6 +228,21 @@ socket.on("dialStatus", (data) => {
   data: {
     sessionId: '07475d2c-32c9-4f4b-8103-6db8c0dc741f',
     status: 'Dialing' // 'Dialing', 'Ringing', 'Busy', 'Connected'
+  }
+  */
+});
+```
+
+##### `dtmf`
+
+Receive dtmf.
+
+```javascript
+socket.on("dtmf", (data) => {
+  /*
+  data: {
+    sessionId: '07475d2c-32c9-4f4b-8103-6db8c0dc741f',
+    digit: '1' // 1, 2, 3, 4 5, a, b etc
   }
   */
 });
@@ -317,6 +334,18 @@ Send checkPoint or mark after send audio.
 socket.emit("checkPoint", {
   sessionId: "07475d2c-32c9-4f4b-8103-6db8c0dc741f",
   name: "mark audio playback",
+});
+```
+
+##### `dtmf`
+
+Send dtmf audio
+
+```javascript
+socket.emit("dtmf", {
+  sessionId: "07475d2c-32c9-4f4b-8103-6db8c0dc741f",
+  digit: "1",
+  duration: 200, // in milisecond
 });
 ```
 

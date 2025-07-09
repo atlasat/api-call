@@ -543,7 +543,6 @@ async function makeCall() {
 2. **Error Handling**: Always handle both HTTP and WebSocket errors gracefully
 3. **Audio Buffering**: Implement proper audio buffering for smooth playback
 4. **Session Management**: Keep track of active sessions and clean up resources
-5. **Rate Limiting**: Respect API rate limits and implement appropriate backoff strategies
 
 ---
 

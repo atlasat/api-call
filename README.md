@@ -319,7 +319,6 @@ socket.emit('audio', {
   /*
   acknowledgment: {
     success: true,
-    label: 'audio_label_1',
     error: null
   }
   */

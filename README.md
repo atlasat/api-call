@@ -292,7 +292,7 @@ socket.on("hangup", (data) => {
   }
   */
 });
-````
+```
 
 #### Client to Server Events
 

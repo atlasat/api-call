@@ -278,7 +278,6 @@ socket.on("checkPoint", (data) => {
 });
 ```
 
-````
 
 ##### `hangup`
 

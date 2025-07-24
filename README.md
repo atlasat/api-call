@@ -332,16 +332,16 @@ Client                    Server
   |                        |
   |--- hangup ------------>|
   |<-- hangup -------------|
-  |--- cdr ------------>|
+  |------  cdr ----------> |
 ```
 
-### Events Reference
+## Events Reference
 
 #### Server to Client Events
 
-##### `newSession`
+## `newSession`
 
-Triggered when a new call session is created via REST API.
+The `newSession` event is triggered when a new call session is initiated through the REST API. This allows clients to listen for the creation of both inbound and outbound call sessions in real-time.
 
 ```javascript
 socket.on("newSession", (data) => {
@@ -354,9 +354,16 @@ socket.on("newSession", (data) => {
 });
 ```
 
-##### `roomJoined`
+#### Payload Parameters
 
-Confirmation that the client has successfully joined the call room.
+| Field       | Type   | Description                                 |
+| ----------- | ------ | ------------------------------------------- |
+| `sessionId` | String | Unique identifier for the new call session. |
+| `type`      | String | Type of call: `"inbound"` or `"outbound"`.  |
+
+## `roomJoined`
+
+The `roomJoined` event is emitted by the server to confirm whether the client has successfully joined the designated call room.
 
 ```javascript
 socket.on("roomJoined", (data) => {
@@ -369,9 +376,16 @@ socket.on("roomJoined", (data) => {
 });
 ```
 
-##### `dialStatus`
+#### Payload Parameters
 
-Real-time call status updates.
+| Field       | Type   | Description                                           |
+| ----------- | ------ | ----------------------------------------------------- |
+| `sessionId` | String | The unique identifier of the call session (room).     |
+| `status`    | String | Indicates if the client successfully joined the room. |
+
+## `dialStatus`
+
+The `dialStatus` event provides real-time updates about the current status of an ongoing call session. This helps the client track the call lifecycle (e.g., dialing, ringing, connected).
 
 ```javascript
 socket.on("dialStatus", (data) => {
@@ -384,9 +398,25 @@ socket.on("dialStatus", (data) => {
 });
 ```
 
-##### `dtmf`
+#### Payload Parameters
 
-Receive dtmf.
+| Field       | Type   | Description                                |
+| ----------- | ------ | ------------------------------------------ |
+| `sessionId` | String | The unique identifier of the call session. |
+| `status`    | String | The current status of the call.            |
+
+#### Possible Status Values
+
+- `Dialing` — Call is being initiated.
+- `Ringing` — The destination is ringing.
+- `Busy` — The destination is currently busy.
+- `Connected` — The call has been successfully answered.
+
+---
+
+## `dtmf`
+
+The `dtmf` event is triggered whenever a Dual-Tone Multi-Frequency (DTMF) digit is received during a call session. This is typically used for IVR (Interactive Voice Response) systems or capturing keypad input from the user.
 
 ```javascript
 socket.on("dtmf", (data) => {
@@ -399,9 +429,25 @@ socket.on("dtmf", (data) => {
 });
 ```
 
-##### `audio`
+#### Payload Parameters
 
-Receives audio data from the call. Audio format: 320-byte signed linear, 16-bit, 8kHz, mono PCM (little-endian).
+| Field       | Type   | Description                                          |
+| ----------- | ------ | ---------------------------------------------------- |
+| `sessionId` | String | Unique identifier for the call session.              |
+| `digit`     | String | The DTMF digit received (e.g., '1', '\*', '#', 'A'). |
+
+## `audio`
+
+The audio event is triggered to deliver raw audio data from the ongoing call session. This audio stream can be used for real-time processing, such as transcription, speech analysis, or playback.
+
+#### Audio Format:
+
+- Codec: Linear PCM (Pulse Code Modulation)
+- Bit Depth: 16-bit signed integers
+- Sample Rate: 8 kHz
+- Channels: Mono
+- Byte Order: Little-endian
+- Chunk Size: 320 bytes per frame
 
 ```javascript
 socket.on("audio", (data) => {
@@ -409,14 +455,23 @@ socket.on("audio", (data) => {
   data: {
     sessionId: '07475d2c-32c9-4f4b-8103-6db8c0dc741f',
     audioData: <Buffer 33 29 12 94> // Buffer type
+    audioFormat: 'pcm16'
   }
   */
 });
 ```
 
-##### `checkPoint`
+#### Payload Parameters
 
-Notifies the client that a previously submitted checkpoint has completed audio playback.
+| Field         | Type   | Description                               |
+| ------------- | ------ | ----------------------------------------- |
+| `sessionId`   | String | Unique identifier for the call session.   |
+| `audioData`   | Buffer | Audio buffer in 16-bit linear PCM format. |
+| `audioFormat` | String | type of audio pcm16                       |
+
+## `checkPoint`
+
+The checkPoint event notifies the client when a previously submitted checkpoint has finished playing its associated audio. This can be used to synchronize events or trigger actions precisely after specific audio segments have completed.
 
 ```javascript
 socket.on("checkPoint", (data) => {
@@ -429,9 +484,16 @@ socket.on("checkPoint", (data) => {
 });
 ```
 
-##### `hangup`
+#### Payload Parameters
 
-Notification that the call has been terminated.
+| Field       | Type   | Description                                    |
+| ----------- | ------ | ---------------------------------------------- |
+| `sessionId` | String | Unique identifier for the call session.        |
+| `name`      | String | The name of the checkpoint that has completed. |
+
+## `hangup`
+
+The `hangup` event notifies the client that the call session has been terminated. This may occur due to user action, network issues, or a remote party disconnecting.
 
 ```javascript
 socket.on("hangup", (data) => {
@@ -443,7 +505,13 @@ socket.on("hangup", (data) => {
 });
 ```
 
-##### `cdr`
+#### Payload Parameters
+
+| Field       | Type   | Description                                            |
+| ----------- | ------ | ------------------------------------------------------ |
+| `sessionId` | String | Unique identifier for the call session that has ended. |
+
+## `cdr`
 
 The cdr event is emitted after a call session has ended, typically upon call hangup. This event provides a Call Detail Record (CDR), which contains comprehensive metadata related to the completed call session.
 This event allows the system or client application to log, store, or process call-related data for billing, analytics, auditing, or reporting purposes.
@@ -507,7 +575,7 @@ socket.on("cdr", (cdr) => {
 
 #### Client to Server Events
 
-##### `joinRoom`
+## `joinRoom`
 
 Request to join a call session room.
 
@@ -517,7 +585,7 @@ socket.emit("joinRoom", {
 });
 ```
 
-##### `audio`
+## `audio`
 
 The audio event allows the client to send raw or encoded audio data directly into an ongoing call session in real time. This enables advanced media control such as custom voice prompts, TTS injection, and audio overlays.
 
@@ -538,7 +606,7 @@ socket.emit('audio', {
 });
 ```
 
-####📘 Payload Parameters:
+#### 📘 Payload Parameters:
 
 | Field         | Type     | Description                                                                        |
 | ------------- | -------- | ---------------------------------------------------------------------------------- |
@@ -570,7 +638,8 @@ This table shows how chunk sizes affect transmission timing and efficiency over 
 | 2560  | 8×      | 160 ms        | 160 ms          | ⭐ **OPTIMAL**     |
 | 2880  | 9×      | 180 ms        | 180 ms          | High efficiency    |
 
-> ⚖️ Recommendation: 2560-byte packets (160 ms) provide the best trade-off between latency and transmission overhead in most VoIP or streaming scenarios.
+> ⚖️ Recommendation: 2560-byte packets (160 ms) provide the best trade-off between
+> latency and transmission overhead in most VoIP or streaming scenarios.
 
 #### ✅ Acknowledgment Response:
 
@@ -579,7 +648,9 @@ This table shows how chunk sizes affect transmission timing and efficiency over 
 | `success` | `boolean`          | Indicates whether the audio chunk was successfully processed. |
 | `error`   | `string` or `null` | Returns error message if transmission failed.                 |
 
-##### `checkPoint`
+---
+
+## `checkPoint`
 
 After sending audio data to the call session using the audio event, the client may emit a checkPoint event to indicate a significant moment during audio playback—such as a marker, timestamp, or synchronization point.
 
@@ -592,7 +663,7 @@ socket.emit("checkPoint", {
 });
 ```
 
-Parameter
+Parameters
 
 | Field       | Type     | Description                                           |
 | ----------- | -------- | ----------------------------------------------------- |
@@ -617,7 +688,9 @@ It is recommended to emit `checkPoint` immediately after the final or key `audio
 - Specific spoken phrase boundaries.
 - Transcription markers or cue points.
 
-##### `dtmf`
+---
+
+## `dtmf`
 
 The `dtmf` event is used to send Dual-Tone Multi-Frequency (DTMF) signals into an active audio session. This is typically used for transmitting keypresses (such as digits, `*`, or `#`) during a phone call, IVR navigation, or interactive voice response systems.
 
@@ -658,9 +731,11 @@ Upon receiving the `dtmf` event, the server:
 
 ---
 
-##### `interruption`
+## `interruption`
 
-Stop currently playing audio and clear the audio queue.
+The `interruption` event is used to immediately stop any audio that is currently being played and clear the audio queue for a given session.
+
+This is typically used when you need to cancel ongoing audio playback—for example, when the user takes an action that invalidates the current audio flow or when a new message needs to take priority.
 
 ```javascript
 socket.emit("interruption", {
@@ -668,15 +743,41 @@ socket.emit("interruption", {
 });
 ```
 
-##### `hangup`
+#### Parameters
 
-Request to terminate the call.
+| Field       | Type   | Required | Description                                                                   |
+| ----------- | ------ | -------- | ----------------------------------------------------------------------------- |
+| `sessionId` | String | Yes      | The unique session ID of the active connection whose audio should be stopped. |
+
+#### Behavior
+
+- Current audio playback is stopped immediately.
+- All queued audio files are discarded.
+- No new audio will be played unless a new playAudio or similar event is emitted.
+
+---
+
+## `hangup`
+
+The `hangup` event is used to request termination of an active call session. Once emitted, the server will process the request and initiate the call hangup procedure associated with the specified session.
 
 ```javascript
 socket.emit("hangup", {
   sessionId: "07475d2c-32c9-4f4b-8103-6db8c0dc741f",
 });
 ```
+
+#### Parameters
+
+| Field       | Type   | Required | Description                                                 |
+| ----------- | ------ | -------- | ----------------------------------------------------------- |
+| `sessionId` | String | Yes      | The unique identifier of the call session to be terminated. |
+
+#### Behavior
+
+- Ends the call session associated with the given sessionId.
+- Triggers internal cleanup such as stopping media, closing connections, and generating call records (CDRs).
+- May notify other connected clients or systems that the session has ended.
 
 ---
 

@@ -253,7 +253,7 @@ GET /cdr/0198355b-f324-718b-95a4-625c43c654bc
   "errors": "",
   "data": {
     "sessionId": "0198355b-f324-718b-95a4-625c43c654bc",
-    "destination": "08118448401",
+    "destination": "089608675796",
     "startTime": "2025-07-23T03:37:56.000Z",
     "answerTime": null,
     "endTime": "2025-07-23T03:38:20.000Z",

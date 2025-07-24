@@ -1,6 +1,6 @@
 # API Documentation - Outgoing Call Service
 
-**Version:** 1.0.3  
+**Version:** 1.0.4
 **Last Updated:** July 2025  
 **Base URL:** `https://api-call.optimaccs.com`
 
@@ -135,7 +135,157 @@ Terminates an active call session.
 }
 ```
 
+### 3. API: Retrieve Call Detail Records (CDR)
+
+**Endpoint:** `GET /cdr`
+
+Fetches a list of Call Detail Records (CDRs) with support for pagination and filtering.
+
 ---
+
+## Query Parameters
+
+| Parameter        | Type   | Description                                                |
+| ---------------- | ------ | ---------------------------------------------------------- |
+| `page`           | number | Page number, starting from 1.                              |
+| `limit`          | number | Number of records per page.                                |
+| `filter.<field>` | string | Used to filter records by field using supported operators. |
+
+---
+
+## Supported Filter Fields and Operators
+
+### 1. `destination`
+
+- **Operators:** `$eq`, `$contains`
+- **Examples:**
+  - `/cdr?filter.destination=$eq:08123456789`
+  - `/cdr?filter.destination=$contains:0812`
+
+### 2. `duration`
+
+- **Operators:** `$eq`, `$gt`, `$gte`, `$lt`, `$lte`
+- **Examples:**
+  - `/cdr?filter.duration=$gte:60`
+  - `/cdr?filter.duration=$lt:300`
+
+### 3. `billableSeconds`
+
+- **Operators:** `$eq`, `$gt`, `$gte`, `$lt`, `$lte`
+- **Examples:**
+  - `/cdr?filter.billableSeconds=$gt:30`
+  - `/cdr?filter.billableSeconds=$lte:180`
+
+---
+
+### Example Request
+
+```http
+GET /cdr?page=1&limit=10&filter.destination=$contains:0812&filter.duration=$gte:30
+```
+
+### Response Example
+
+```json
+{
+"data": [
+  {
+     "sessionId": "0198355b-f324-718b-95a4-625c43c654bc",
+      "destination": "0811234678",
+      "startTime": "2025-07-23T03:37:56.000Z",
+      "answerTime": null,
+      "endTime": "2025-07-23T03:38:20.000Z",
+      "duration": 24,
+      "billableSeconds": 0,
+      "disposition": "NO ANSWER",
+      "hangupBy": null,
+      "hangupCauseCode": 16,
+      "hangupCauseText": "Normal Clearing",
+      "createdAt": "2025-07-23T03:38:22.000Z",
+      "updatedAt": "2025-07-23T03:38:22.000Z"
+  },
+  ...
+],
+  "meta": {
+        "itemsPerPage": 100,
+        "totalItems": 36,
+        "currentPage": 1,
+        "totalPages": 1,
+        "sortBy": [
+            [
+                "id",
+                "DESC"
+            ]
+        ]
+    },
+}
+```
+
+---
+
+### 4. API: Get CDR Detail
+
+**Endpoint:** `GET /cdr/{sessionId}`
+
+Retrieves detailed information for a specific Call Detail Record (CDR) by session ID.
+
+---
+
+### Path Parameters
+
+| Parameter   | Type   | Description                            |
+| ----------- | ------ | -------------------------------------- |
+| `sessionId` | string | Unique session identifier for the CDR. |
+
+---
+
+### Example Request
+
+```http
+GET /cdr/0198355b-f324-718b-95a4-625c43c654bc
+```
+
+### Example Response
+
+```json
+{
+  "status": 200,
+  "errors": "",
+  "data": {
+    "sessionId": "0198355b-f324-718b-95a4-625c43c654bc",
+    "destination": "08118448401",
+    "startTime": "2025-07-23T03:37:56.000Z",
+    "answerTime": null,
+    "endTime": "2025-07-23T03:38:20.000Z",
+    "duration": 24,
+    "billableSeconds": 0,
+    "disposition": "NO ANSWER",
+    "hangupBy": null,
+    "hangupCauseCode": 0,
+    "hangupCauseText": "Unknown",
+    "createdAt": "2025-07-23T03:38:22.000Z",
+    "updatedAt": "2025-07-23T03:38:22.000Z"
+  }
+}
+```
+
+### Response Fields
+
+| Field             | Type     | Description                                          |
+| ----------------- | -------- | ---------------------------------------------------- |
+| `sessionId`       | string   | Unique ID for the CDR session.                       |
+| `destination`     | string   | Destination phone number.                            |
+| `startTime`       | datetime | Time the call was initiated.                         |
+| `answerTime`      | datetime | Time the call was answered (null if unanswered).     |
+| `endTime`         | datetime | Time the call ended.                                 |
+| `duration`        | number   | Duration of the call in seconds.                     |
+| `billableSeconds` | number   | Billable time in seconds.                            |
+| `disposition`     | string   | Final state of the call (e.g., ANSWERED, NO ANSWER). |
+| `hangupBy`        | string   | Party that hung up (if available).                   |
+| `hangupCauseCode` | number   | Numeric hangup cause code.                           |
+| `hangupCauseText` | string   | Text explanation of hangup cause.                    |
+| `createdAt`       | datetime | Record creation time.                                |
+| `updatedAt`       | datetime | Last update time for the record.                     |
 
 ## WebSocket Integration
 
@@ -182,6 +332,7 @@ Client                    Server
   |                        |
   |--- hangup ------------>|
   |<-- hangup -------------|
+  |--- cdr ------------>|
 ```
 
 ### Events Reference
@@ -278,7 +429,6 @@ socket.on("checkPoint", (data) => {
 });
 ```
 
-
 ##### `hangup`
 
 Notification that the call has been terminated.
@@ -292,6 +442,68 @@ socket.on("hangup", (data) => {
   */
 });
 ```
+
+##### `cdr`
+
+The cdr event is emitted after a call session has ended, typically upon call hangup. This event provides a Call Detail Record (CDR), which contains comprehensive metadata related to the completed call session.
+This event allows the system or client application to log, store, or process call-related data for billing, analytics, auditing, or reporting purposes.
+
+```javascript
+socket.on("cdr", (cdr) => {
+  /*
+  cdr: {
+    sessionId: '07475d2c-32c9-4f4b-8103-6db8c0dc741f',
+    destination: '0811234567',
+    startTime: 2025-07-23T05:17:28.000Z,
+    answerTime: 2025-07-23T05:17:34.000Z,
+    endTime: 2025-07-23T05:17:40.000Z,
+    duration: 11,
+    billableSeconds: 5,
+    disposition: 'ANSWERED',
+    hangupBy: 'CALLEE',
+    hangupCauseCode: 16,
+    hangupCauseText: 'Call completed successfully'
+  }
+  */
+});
+```
+
+### cdr field
+
+| Field             | Description                                                                |
+| ----------------- | -------------------------------------------------------------------------- |
+| `sessionId`       | Unique identifier for the call session                                     |
+| `destination`     | Destination number or party being called                                   |
+| `startTime`       | Timestamp when the call was initiated                                      |
+| `answerTime`      | Timestamp when the call was answered                                       |
+| `endTime`         | Timestamp when the call ended (hangup occurred)                            |
+| `duration`        | Total call duration in seconds (from start to end)                         |
+| `billableSeconds` | Duration considered billable, excluding ring time or early termination     |
+| `disposition`     | Final status of the call (e.g., ANSWERED, NO ANSWER, BUSY, FAILED, CANCEL) |
+| `hangupBy`        | Indicates which party ended the call (`CALLER` or `CALLEE`)                |
+| `hangupCauseCode` | Numeric code indicating the reason for call termination                    |
+| `hangupCauseText` | Textual description of the hangup cause                                    |
+
+### hangup cause code
+
+| Code | Text                             | Description                                                  |
+| ---- | -------------------------------- | ------------------------------------------------------------ |
+| 0    | Call terminated - unknown reason | Cause is unknown or not configured                           |
+| 1    | Invalid destination number       | Called number is not allocated/invalid                       |
+| 16   | Call completed successfully      | Call terminated **\*\*\*\*** (usually by remote party)       |
+| 17   | Destination busy                 | User is busy                                                 |
+| 18   | No response from destination     | No response from user (not answering)                        |
+| 19   | Destination not answering        | Phone is ringing but not answered                            |
+| 21   | Call declined by user            | Call rejected by recipient                                   |
+| 27   | Service unavailable              | Destination number is not working or inactive                |
+| 28   | Invalid number format            | Wrong or incomplete number format                            |
+| 29   | Service not supported            | Service or feature request rejected                          |
+| 34   | Network congestion               | No circuit/channel available to make the call                |
+| 38   | Network failure                  | Network issues causing call failure                          |
+| 44   | Resource unavailable             | Requested circuit/channel is not available                   |
+| 58   | Service not implemented          | Channel type not supported by recipient                      |
+| 102  | Connection timeout               | Timeout while waiting for response, system performs recovery |
+| 127  | System error                     | Inter-network issues without specific explanation            |
 
 #### Client to Server Events
 
@@ -307,7 +519,9 @@ socket.emit("joinRoom", {
 
 ##### `audio`
 
-Send audio data to the call. Supports multiple audio formats.
+The audio event allows the client to send raw or encoded audio data directly into an ongoing call session in real time. This enables advanced media control such as custom voice prompts, TTS injection, and audio overlays.
+
+This interface supports multiple audio formats commonly used in telephony systems and requires precise timing and byte alignment for optimal performance.
 
 ```javascript
 socket.emit('audio', {
@@ -324,9 +538,52 @@ socket.emit('audio', {
 });
 ```
 
+####📘 Payload Parameters:
+
+| Field         | Type     | Description                                                                        |
+| ------------- | -------- | ---------------------------------------------------------------------------------- |
+| `audioData`   | `Buffer` | The binary audio payload. Must conform to the format and timing expectations.      |
+| `sessionId`   | `string` | The unique identifier of the call session currently in progress.                   |
+| `audioFormat` | `string` | Format of the audio data. Accepted values: `'mp3'`, `'ulaw'`, `'alaw'`, `'pcm16'`. |
+
+#### ⏱️ Audio Timing and Chunk Size
+
+To ensure smooth playback, audio data must be chunked in real-time intervals. A standard telephony sampling rate of 8000 Hz is used, where each 320 bytes of pcm16 audio represents 20 ms of sound.
+
+> 🧠 For uncompressed pcm16, chunk size = 2 bytes per sample × 8000 samples/sec × duration.
+
+#### 📊 Audio Packet Timing Table
+
+This table shows how chunk sizes affect transmission timing and efficiency over the network:
+
+#### 🔧 8000 Hz, 320 bytes per packet (20 ms audio)
+
+| Bytes | Packets | Duration (ms) | Playback Timing | Network Efficiency |
+| ----- | ------- | ------------- | --------------- | ------------------ |
+| 320   | 1×      | 20 ms         | 20 ms           | High overhead      |
+| 640   | 2×      | 40 ms         | 40 ms           | High overhead      |
+| 960   | 3×      | 60 ms         | 60 ms           | Medium overhead    |
+| 1280  | 4×      | 80 ms         | 80 ms           | Good balance       |
+| 1600  | 5×      | 100 ms        | 100 ms          | Good balance       |
+| 1920  | 6×      | 120 ms        | 120 ms          | Good efficiency    |
+| 2240  | 7×      | 140 ms        | 140 ms          | Good efficiency    |
+| 2560  | 8×      | 160 ms        | 160 ms          | ⭐ **OPTIMAL**     |
+| 2880  | 9×      | 180 ms        | 180 ms          | High efficiency    |
+
+> ⚖️ Recommendation: 2560-byte packets (160 ms) provide the best trade-off between latency and transmission overhead in most VoIP or streaming scenarios.
+
+#### ✅ Acknowledgment Response:
+
+| Field     | Type               | Description                                                   |
+| --------- | ------------------ | ------------------------------------------------------------- |
+| `success` | `boolean`          | Indicates whether the audio chunk was successfully processed. |
+| `error`   | `string` or `null` | Returns error message if transmission failed.                 |
+
 ##### `checkPoint`
 
-Send checkPoint or mark after send audio.
+After sending audio data to the call session using the audio event, the client may emit a checkPoint event to indicate a significant moment during audio playback—such as a marker, timestamp, or synchronization point.
+
+This can be useful for logging, analytics, or coordinating client-side logic in real-time.
 
 ```javascript
 socket.emit("checkPoint", {
@@ -335,9 +592,34 @@ socket.emit("checkPoint", {
 });
 ```
 
+Parameter
+
+| Field       | Type     | Description                                           |
+| ----------- | -------- | ----------------------------------------------------- |
+| `sessionId` | `string` | The unique identifier for the call session.           |
+| `name`      | `string` | A descriptive label or name for the checkpoint event. |
+
+#### Behavior
+
+Upon receiving the `checkPoint` event, the server may:
+
+- Record the current playback timestamp.
+- Log the event for audit or debug purposes.
+- Acknowledge the checkpoint to the sender (if implemented).
+
+---
+
+#### Best Practice
+
+It is recommended to emit `checkPoint` immediately after the final or key `audio` emit to ensure temporal alignment with audio playback on the server side. For example, use it to denote:
+
+- Start or end of an audio segment.
+- Specific spoken phrase boundaries.
+- Transcription markers or cue points.
+
 ##### `dtmf`
 
-Send dtmf audio
+The `dtmf` event is used to send Dual-Tone Multi-Frequency (DTMF) signals into an active audio session. This is typically used for transmitting keypresses (such as digits, `*`, or `#`) during a phone call, IVR navigation, or interactive voice response systems.
 
 ```javascript
 socket.emit("dtmf", {
@@ -347,12 +629,34 @@ socket.emit("dtmf", {
 });
 ```
 
-**Supported Audio Formats:**
+#### Parameters
 
-- `mp3` (default)
-- `ulaw`
-- `alaw`
-- `pcm16`
+- **`sessionId`** `(string)`  
+  The unique identifier for the active audio session.
+
+- **`digit`** `(string)`  
+  The DTMF digit to be sent. Acceptable values include `'0'–'9'`, `'*'`, and `'#'`.
+
+- **`duration`** `(number)`  
+  The length of the tone in milliseconds (commonly between `100–500ms`).
+
+---
+
+#### Behavior
+
+Upon receiving the `dtmf` event, the server:
+
+- Injects the specified DTMF tone into the media stream for the given session.
+- May log or audit the DTMF tone for traceability or feature triggers.
+
+---
+
+#### Best Practice
+
+- Keep DTMF tone durations within a standard range (e.g., `150–300ms`) to ensure compatibility across different endpoints and devices.
+- Avoid sending multiple DTMF digits in rapid succession without appropriate inter-digit delay (~50ms).
+
+---
 
 ##### `interruption`
 
@@ -549,6 +853,6 @@ async function makeCall() {
 
 For technical support and questions, please contact:
 
-- Documentation Version: 1.0.3
+- Documentation Version: 1.0.4
 - API Base URL: https://api-call.optimaccs.com
 - Support: [Contact your API provider]

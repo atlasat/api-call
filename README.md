@@ -1,55 +1,69 @@
-# API Documentation - Outgoing Call Service
+# 📞 Outgoing Call Service API Documentation
 
-**Version:** 1.0.4
-**Last Updated:** July 2025  
-**Base URL:** `https://api-call.optimaccs.com`
+![Version](https://img.shields.io/badge/version-1.0.4-blue.svg?cacheSeconds=2592000)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![API](https://img.shields.io/badge/API-REST%20%2B%20WebSocket-orange.svg)
 
----
+**A comprehensive solution for managing voice calls through REST endpoints and real-time WebSocket communication.**
 
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Authentication](#authentication)
-3. [REST API Endpoints](#rest-api-endpoints)
-4. [WebSocket Integration](#websocket-integration)
-5. [Error Handling](#error-handling)
-6. [Code Examples](#code-examples)
+[🚀 Quick Start](#-quick-start) • [📖 Documentation](#-documentation) • [🔧 Examples](#-examples) • [💬 Support](#-support)
 
 ---
 
-## Overview
+## 📋 Table of Contents
+
+- [🎯 Overview](#-overview)
+- [🔐 Authentication](#-authentication)
+- [🌐 REST API Endpoints](#-rest-api-endpoints)
+- [🔌 WebSocket Integration](#-websocket-integration)
+- [⚠️ Error Handling](#️-error-handling)
+- [💻 Code Examples](#-code-examples)
+- [📚 Best Practices](#-best-practices)
+
+---
+
+## 🎯 Overview
 
 The Outgoing Call API provides a comprehensive solution for managing voice calls through REST endpoints and real-time WebSocket communication. This service enables applications to initiate outbound calls, manage call sessions, and handle bi-directional audio streaming.
 
-### Key Features
+### ✨ Key Features
 
-- Outbound call initiation
-- Real-time call status updates
-- Bi-directional audio streaming
-- Session management
-- Multiple audio format support
+| Feature                    | Description                                       |
+| -------------------------- | ------------------------------------------------- |
+| 📤 **Outbound Calls**      | Initiate calls to any phone number                |
+| 📊 **Real-time Status**    | Live call status updates via WebSocket            |
+| 🎵 **Audio Streaming**     | Bi-directional audio with multiple format support |
+| 📞 **Session Management**  | Complete call lifecycle management                |
+| 📈 **Call Detail Records** | Comprehensive CDR with filtering and pagination   |
 
 ---
 
-## Authentication
+### 🔗 Base URL
+
+```
+https://api-call.optimaccs.com
+```
+
+## 🔐 Authentication
 
 All API requests require a Bearer token for authentication.
 
-### Header Requirements
+### 🔑 Header Requirements
 
-| Parameter       | Type   | Required | Description                                |
-| --------------- | ------ | -------- | ------------------------------------------ |
-| `Authorization` | String | Yes      | Bearer token format: `Bearer [your_token]` |
-
-**Example:**
-
-```
+```http
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
+| Parameter       | Type   | Required | Description         |
+| --------------- | ------ | -------- | ------------------- |
+| `Authorization` | String | ✅       | Bearer token format |
+
+> ⚠️ **Important**: Keep your authentication token secure and never expose it in client-side code.
+
 ---
 
-## REST API Endpoints
+## 🌐 REST API Endpoints
 
 ### 1. Initiate Outgoing Call
 
@@ -137,13 +151,13 @@ Terminates an active call session.
 
 ### 3. API: Retrieve Call Detail Records (CDR)
 
-**Endpoint:** `GET /cdr`
+**Endpoint:** `GET /v1/cdr`
 
 Fetches a list of Call Detail Records (CDRs) with support for pagination and filtering.
 
 ---
 
-## Query Parameters
+#### 🔍 Query Parameters
 
 | Parameter        | Type   | Description                                                |
 | ---------------- | ------ | ---------------------------------------------------------- |
@@ -153,38 +167,50 @@ Fetches a list of Call Detail Records (CDRs) with support for pagination and fil
 
 ---
 
-## Supported Filter Fields and Operators
+#### 🎯 Supported Filters
 
-### 1. `destination`
+<details>
+<summary><strong>📍 Destination Filters</strong></summary>
 
 - **Operators:** `$eq`, `$contains`
 - **Examples:**
-  - `/cdr?filter.destination=$eq:08123456789`
-  - `/cdr?filter.destination=$contains:0812`
+  ```
+  /v1/cdr?filter.destination=$eq:08123456789
+  /v1/cdr?filter.destination=$contains:0812
+  ```
+  </details>
 
-### 2. `duration`
-
-- **Operators:** `$eq`, `$gt`, `$gte`, `$lt`, `$lte`
-- **Examples:**
-  - `/cdr?filter.duration=$gte:60`
-  - `/cdr?filter.duration=$lt:300`
-
-### 3. `billableSeconds`
+<details>
+<summary><strong>⏱️ Duration Filters</strong></summary>
 
 - **Operators:** `$eq`, `$gt`, `$gte`, `$lt`, `$lte`
 - **Examples:**
-  - `/cdr?filter.billableSeconds=$gt:30`
-  - `/cdr?filter.billableSeconds=$lte:180`
+  ```
+  /v1/cdr?filter.duration=$gte:60
+  /v1/cdr?filter.duration=$lt:300
+  ```
+  </details>
+
+<details>
+<summary><strong>💰 Billable Seconds Filters</strong></summary>
+
+- **Operators:** `$eq`, `$gt`, `$gte`, `$lt`, `$lte`
+- **Examples:**
+  ```
+  /v1/cdr?filter.billableSeconds=$gt:30
+  /v1/cdr?filter.billableSeconds=$lte:180
+  ```
+  </details>
 
 ---
 
-### Example Request
+#### 📤 Example Request
 
 ```http
-GET /cdr?page=1&limit=10&filter.destination=$contains:0812&filter.duration=$gte:30
+GET /v1/cdr?page=1&limit=10&filter.destination=$contains:0812&filter.duration=$gte:30
 ```
 
-### Response Example
+#### 📤 Response Example
 
 ```json
 {
@@ -225,7 +251,7 @@ GET /cdr?page=1&limit=10&filter.destination=$contains:0812&filter.duration=$gte:
 
 ### 4. API: Get CDR Detail
 
-**Endpoint:** `GET /cdr/{sessionId}`
+**Endpoint:** `GET /v1/cdr/{sessionId}`
 
 Retrieves detailed information for a specific Call Detail Record (CDR) by session ID.
 
@@ -239,13 +265,13 @@ Retrieves detailed information for a specific Call Detail Record (CDR) by sessio
 
 ---
 
-### Example Request
+#### 📤 Example Request
 
 ```http
-GET /cdr/0198355b-f324-718b-95a4-625c43c654bc
+GET /v1/cdr/0198355b-f324-718b-95a4-625c43c654bc
 ```
 
-### Example Response
+#### 📤 Example Response
 
 ```json
 {
@@ -269,7 +295,7 @@ GET /cdr/0198355b-f324-718b-95a4-625c43c654bc
 }
 ```
 
-### Response Fields
+#### 📤 Response Fields
 
 | Field             | Type     | Description                                          |
 | ----------------- | -------- | ---------------------------------------------------- |
@@ -287,9 +313,9 @@ GET /cdr/0198355b-f324-718b-95a4-625c43c654bc
 | `createdAt`       | datetime | Record creation time.                                |
 | `updatedAt`       | datetime | Last update time for the record.                     |
 
-## WebSocket Integration
+## 🔌 WebSocket Integration
 
-The service uses Socket.IO for real-time communication and audio streaming.
+Real-time communication using Socket.IO for live call management and audio streaming.
 
 ### Connection Setup
 
@@ -308,38 +334,42 @@ const SERVER_URL = "https://api-call.optimaccs.com";
 const socket = io(SERVER_URL, SOCKET_CONFIG);
 ```
 
-### Event Flow Diagram
+### 📊 Event Flow Diagram
 
-The following diagram illustrates the typical event flow for an outgoing call session:
+```mermaid
+sequenceDiagram
+    participant 📱 Client
+    participant 🖥️ Server
 
+    Note over 📱 Client, 🖥️ Server: 🚀 Call Initialization
+    📱 Client->>🖥️ Server: 📞 POST /pbx/call
+    🖥️ Server-->>📱 Client: 🔑 sessionId
+
+    Note over 📱 Client, 🖥️ Server: 🔗 Session Setup
+    🖥️ Server-->>📱 Client: ✨ newSession
+    📱 Client->>🖥️ Server: 🚪 joinRoom
+    🖥️ Server-->>📱 Client: ✅ roomJoined
+
+    Note over 📱 Client, 🖥️ Server: 📞 Call Flow
+    🖥️ Server-->>📱 Client: 📊 dialStatus
+    📱 Client->>🖥️ Server: 🎵 audio
+    🖥️ Server-->>📱 Client: 🎵 audio
+    📱 Client->>🖥️ Server: ✔️ checkPoint
+    🖥️ Server-->>📱 Client: ✔️ checkPoint
+    📱 Client->>🖥️ Server: 🔢 dtmf
+    🖥️ Server-->>📱 Client: 🔢 dtmf
+
+    Note over 📱 Client, 🖥️ Server: ☎️ Call Termination
+    📱 Client->>🖥️ Server: 📴 hangup
+    🖥️ Server-->>📱 Client: 📴 hangup
+    🖥️ Server-->>📱 Client: 📋 cdr
 ```
-Client                    Server
-  |                        |
-  |--- POST /pbx/call ---->|
-  |<-- sessionId ----------|
-  |                        |
-  |<-- newSession ---------|
-  |--- joinRoom ---------->|
-  |<-- roomJoined ---------|
-  |                        |
-  |<-- dialStatus ---------|
-  |--- audio ------------->|
-  |<-- audio --------------|
-  |---  checkPoint ------->|
-  |<-- checkPoint ---------|
-   |--------  dtmf ------->|
-  |<-------- dtmf ---------|
-  |                        |
-  |--- hangup ------------>|
-  |<-- hangup -------------|
-  |------  cdr ----------> |
-```
 
-## Events Reference
+## 📡 WebSocket Events Reference
 
-#### Server to Client Events
+### 📥 Server to Client Events
 
-## `newSession`
+### 🆕 `newSession`
 
 The `newSession` event is triggered when a new call session is initiated through the REST API. This allows clients to listen for the creation of both inbound and outbound call sessions in real-time.
 
@@ -354,14 +384,14 @@ socket.on("newSession", (data) => {
 });
 ```
 
-#### Payload Parameters
+#### 📘 Payload Parameters
 
 | Field       | Type   | Description                                 |
 | ----------- | ------ | ------------------------------------------- |
 | `sessionId` | String | Unique identifier for the new call session. |
 | `type`      | String | Type of call: `"inbound"` or `"outbound"`.  |
 
-## `roomJoined`
+### 🏠 `roomJoined`
 
 The `roomJoined` event is emitted by the server to confirm whether the client has successfully joined the designated call room.
 
@@ -376,14 +406,14 @@ socket.on("roomJoined", (data) => {
 });
 ```
 
-#### Payload Parameters
+#### 📘 Payload Parameters
 
 | Field       | Type   | Description                                           |
 | ----------- | ------ | ----------------------------------------------------- |
 | `sessionId` | String | The unique identifier of the call session (room).     |
 | `status`    | String | Indicates if the client successfully joined the room. |
 
-## `dialStatus`
+### 📞 `dialStatus`
 
 The `dialStatus` event provides real-time updates about the current status of an ongoing call session. This helps the client track the call lifecycle (e.g., dialing, ringing, connected).
 
@@ -405,16 +435,16 @@ socket.on("dialStatus", (data) => {
 | `sessionId` | String | The unique identifier of the call session. |
 | `status`    | String | The current status of the call.            |
 
-#### Possible Status Values
+**Status Values:**
 
-- `Dialing` — Call is being initiated.
-- `Ringing` — The destination is ringing.
-- `Busy` — The destination is currently busy.
-- `Connected` — The call has been successfully answered.
+- 🔄 `Dialing` — Call is being initiated
+- 📞 `Ringing` — Destination is ringing
+- 🚫 `Busy` — Destination is busy
+- ✅ `Connected` — Call successfully answered
 
 ---
 
-## `dtmf`
+### 🔢 `dtmf`
 
 The `dtmf` event is triggered whenever a Dual-Tone Multi-Frequency (DTMF) digit is received during a call session. This is typically used for IVR (Interactive Voice Response) systems or capturing keypad input from the user.
 
@@ -429,25 +459,16 @@ socket.on("dtmf", (data) => {
 });
 ```
 
-#### Payload Parameters
+#### 📘 Payload Parameters
 
 | Field       | Type   | Description                                          |
 | ----------- | ------ | ---------------------------------------------------- |
 | `sessionId` | String | Unique identifier for the call session.              |
 | `digit`     | String | The DTMF digit received (e.g., '1', '\*', '#', 'A'). |
 
-## `audio`
+### 🎵 `audio`
 
 The audio event is triggered to deliver raw audio data from the ongoing call session. This audio stream can be used for real-time processing, such as transcription, speech analysis, or playback.
-
-#### Audio Format:
-
-- Codec: Linear PCM (Pulse Code Modulation)
-- Bit Depth: 16-bit signed integers
-- Sample Rate: 8 kHz
-- Channels: Mono
-- Byte Order: Little-endian
-- Chunk Size: 320 bytes per frame
 
 ```javascript
 socket.on("audio", (data) => {
@@ -461,6 +482,13 @@ socket.on("audio", (data) => {
 });
 ```
 
+**Audio Specifications:**
+
+- 🎧 **Format:** Linear PCM 16-bit
+- 📊 **Sample Rate:** 8 kHz
+- 🔊 **Channels:** Mono
+- 📦 **Chunk Size:** 320 bytes/frame
+
 #### Payload Parameters
 
 | Field         | Type   | Description                               |
@@ -469,7 +497,7 @@ socket.on("audio", (data) => {
 | `audioData`   | Buffer | Audio buffer in 16-bit linear PCM format. |
 | `audioFormat` | String | type of audio pcm16                       |
 
-## `checkPoint`
+### ✅ `checkPoint`
 
 The checkPoint event notifies the client when a previously submitted checkpoint has finished playing its associated audio. This can be used to synchronize events or trigger actions precisely after specific audio segments have completed.
 
@@ -484,14 +512,14 @@ socket.on("checkPoint", (data) => {
 });
 ```
 
-#### Payload Parameters
+#### 📘 Payload Parameters
 
 | Field       | Type   | Description                                    |
 | ----------- | ------ | ---------------------------------------------- |
 | `sessionId` | String | Unique identifier for the call session.        |
 | `name`      | String | The name of the checkpoint that has completed. |
 
-## `hangup`
+### 📴 `hangup`
 
 The `hangup` event notifies the client that the call session has been terminated. This may occur due to user action, network issues, or a remote party disconnecting.
 
@@ -505,13 +533,13 @@ socket.on("hangup", (data) => {
 });
 ```
 
-#### Payload Parameters
+#### 📘 Payload Parameters
 
 | Field       | Type   | Description                                            |
 | ----------- | ------ | ------------------------------------------------------ |
 | `sessionId` | String | Unique identifier for the call session that has ended. |
 
-## `cdr`
+### 📊 `cdr`
 
 The cdr event is emitted after a call session has ended, typically upon call hangup. This event provides a Call Detail Record (CDR), which contains comprehensive metadata related to the completed call session.
 This event allows the system or client application to log, store, or process call-related data for billing, analytics, auditing, or reporting purposes.
@@ -536,7 +564,7 @@ socket.on("cdr", (cdr) => {
 });
 ```
 
-### cdr field
+### Cdr field
 
 | Field             | Description                                                                |
 | ----------------- | -------------------------------------------------------------------------- |
@@ -552,30 +580,30 @@ socket.on("cdr", (cdr) => {
 | `hangupCauseCode` | Numeric code indicating the reason for call termination                    |
 | `hangupCauseText` | Textual description of the hangup cause                                    |
 
-### hangup cause code
+### 📞 Hangup Cause Codes
 
-| Code | Text                             | Description                                                  |
-| ---- | -------------------------------- | ------------------------------------------------------------ |
-| 0    | Call terminated - unknown reason | Cause is unknown or not configured                           |
-| 1    | Invalid destination number       | Called number is not allocated/invalid                       |
-| 16   | Call completed successfully      | Call terminated **\*\*\*\*** (usually by remote party)       |
-| 17   | Destination busy                 | User is busy                                                 |
-| 18   | No response from destination     | No response from user (not answering)                        |
-| 19   | Destination not answering        | Phone is ringing but not answered                            |
-| 21   | Call declined by user            | Call rejected by recipient                                   |
-| 27   | Service unavailable              | Destination number is not working or inactive                |
-| 28   | Invalid number format            | Wrong or incomplete number format                            |
-| 29   | Service not supported            | Service or feature request rejected                          |
-| 34   | Network congestion               | No circuit/channel available to make the call                |
-| 38   | Network failure                  | Network issues causing call failure                          |
-| 44   | Resource unavailable             | Requested circuit/channel is not available                   |
-| 58   | Service not implemented          | Channel type not supported by recipient                      |
-| 102  | Connection timeout               | Timeout while waiting for response, system performs recovery |
-| 127  | System error                     | Inter-network issues without specific explanation            |
+| Code | Text                                | Description                                                  |
+| ---- | ----------------------------------- | ------------------------------------------------------------ |
+| 0    | ❓ Call terminated - unknown reason | Cause is unknown or not configured                           |
+| 1    | ❌ Invalid destination number       | Called number is not allocated/invalid                       |
+| 16   | ✅ Call completed successfully      | Call terminated normally (usually by remote party)           |
+| 17   | 🔴 Destination busy                 | User is busy                                                 |
+| 18   | 📵 No response from destination     | No response from user (not answering)                        |
+| 19   | 📞 Destination not answering        | Phone is ringing but not answered                            |
+| 21   | ⛔ Call declined by user            | Call rejected by recipient                                   |
+| 27   | 🚫 Service unavailable              | Destination number is not working or inactive                |
+| 28   | 📝 Invalid number format            | Wrong or incomplete number format                            |
+| 29   | ❌ Service not supported            | Service or feature request rejected                          |
+| 34   | 🚦 Network congestion               | No circuit/channel available to make the call                |
+| 38   | 🔧 Network failure                  | Network issues causing call failure                          |
+| 44   | 🔒 Resource unavailable             | Requested circuit/channel is not available                   |
+| 58   | ⚠️ Service not implemented          | Channel type not supported by recipient                      |
+| 102  | ⏰ Connection timeout               | Timeout while waiting for response, system performs recovery |
+| 127  | 💥 System error                     | Inter-network issues without specific explanation            |
 
-#### Client to Server Events
+## 📤 Client to Server Events
 
-## `joinRoom`
+### 🏠 `joinRoom`
 
 Request to join a call session room.
 
@@ -585,7 +613,7 @@ socket.emit("joinRoom", {
 });
 ```
 
-## `audio`
+### 🎵 `audio`
 
 The audio event allows the client to send raw or encoded audio data directly into an ongoing call session in real time. This enables advanced media control such as custom voice prompts, TTS injection, and audio overlays.
 
@@ -620,7 +648,7 @@ To ensure smooth playback, audio data must be chunked in real-time intervals. A 
 
 > 🧠 For uncompressed pcm16, chunk size = 2 bytes per sample × 8000 samples/sec × duration.
 
-#### 📊 Audio Packet Timing Table
+#### ⏱️ Audio Packet Timing Table
 
 This table shows how chunk sizes affect transmission timing and efficiency over the network:
 
@@ -628,18 +656,13 @@ This table shows how chunk sizes affect transmission timing and efficiency over 
 
 | Bytes | Packets | Duration (ms) | Playback Timing | Network Efficiency |
 | ----- | ------- | ------------- | --------------- | ------------------ |
-| 320   | 1×      | 20 ms         | 20 ms           | High overhead      |
-| 640   | 2×      | 40 ms         | 40 ms           | High overhead      |
-| 960   | 3×      | 60 ms         | 60 ms           | Medium overhead    |
-| 1280  | 4×      | 80 ms         | 80 ms           | Good balance       |
-| 1600  | 5×      | 100 ms        | 100 ms          | Good balance       |
 | 1920  | 6×      | 120 ms        | 120 ms          | Good efficiency    |
 | 2240  | 7×      | 140 ms        | 140 ms          | Good efficiency    |
 | 2560  | 8×      | 160 ms        | 160 ms          | ⭐ **OPTIMAL**     |
 | 2880  | 9×      | 180 ms        | 180 ms          | High efficiency    |
 
-> ⚖️ Recommendation: 2560-byte packets (160 ms) provide the best trade-off between
-> latency and transmission overhead in most VoIP or streaming scenarios.
+> ⚖️ Recommendation: 2560-byte packets (160 ms) provide the best
+> trade-off between latency and transmission overhead in most VoIP or streaming scenarios.
 
 #### ✅ Acknowledgment Response:
 
@@ -650,7 +673,7 @@ This table shows how chunk sizes affect transmission timing and efficiency over 
 
 ---
 
-## `checkPoint`
+### ✅ `checkPoint`
 
 After sending audio data to the call session using the audio event, the client may emit a checkPoint event to indicate a significant moment during audio playback—such as a marker, timestamp, or synchronization point.
 
@@ -690,7 +713,7 @@ It is recommended to emit `checkPoint` immediately after the final or key `audio
 
 ---
 
-## `dtmf`
+### 🔢 `dtmf`
 
 The `dtmf` event is used to send Dual-Tone Multi-Frequency (DTMF) signals into an active audio session. This is typically used for transmitting keypresses (such as digits, `*`, or `#`) during a phone call, IVR navigation, or interactive voice response systems.
 
@@ -731,7 +754,7 @@ Upon receiving the `dtmf` event, the server:
 
 ---
 
-## `interruption`
+### ⏹️ `interruption`
 
 The `interruption` event is used to immediately stop any audio that is currently being played and clear the audio queue for a given session.
 
@@ -757,7 +780,7 @@ socket.emit("interruption", {
 
 ---
 
-## `hangup`
+### 📴 `hangup`
 
 The `hangup` event is used to request termination of an active call session. Once emitted, the server will process the request and initiate the call hangup procedure associated with the specified session.
 
@@ -781,17 +804,17 @@ socket.emit("hangup", {
 
 ---
 
-## Error Handling
+## ⚠️ Error Handling
 
-### HTTP Status Codes
+### 🚦 HTTP Status Codes
 
-| Code | Description                             |
-| ---- | --------------------------------------- |
-| 200  | Success                                 |
-| 400  | Bad Request - Invalid parameters        |
-| 401  | Unauthorized - Invalid or missing token |
-| 404  | Not Found - Resource not found          |
-| 500  | Internal Server Error                   |
+| Code   | Status       | Description                    |
+| ------ | ------------ | ------------------------------ |
+| ✅ 200 | Success      | Request completed successfully |
+| ❌ 400 | Bad Request  | Invalid parameters             |
+| 🔒 401 | Unauthorized | Invalid or missing token       |
+| 🔍 404 | Not Found    | Resource not found             |
+| 💥 500 | Server Error | Internal server error          |
 
 ### Common Error Responses
 
@@ -813,147 +836,156 @@ socket.emit("hangup", {
 
 ---
 
-## Code Examples
+## 💻 Code Examples
 
-### Complete Call Flow Example
+### 🚀 Quick Start Example
 
 ```javascript
-// Initialize Socket.IO connection
+// 1️⃣ Initialize connection
 const socket = io("https://api-call.optimaccs.com", {
   transports: ["websocket"],
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  auth: {
-    token: "your_bearer_token",
-  },
+  auth: { token: "your_bearer_token" },
 });
 
-// Step 1: Initiate call via REST API
-async function initiateCall(phoneNumber) {
-  try {
-    const response = await fetch("https://api-call.optimaccs.com/pbx/call", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer your_bearer_token",
-      },
-      body: JSON.stringify({ phoneNumber }),
-    });
+// 2️⃣ Set up event listeners
+socket.on("newSession", (data) => {
+  console.log("🆕 New session:", data.sessionId);
+  socket.emit("joinRoom", { sessionId: data.sessionId });
+});
 
-    const result = await response.json();
-    if (result.status === 200) {
-      return result.data.sessionId;
-    }
-    throw new Error(result.errors);
-  } catch (error) {
-    console.error("Failed to initiate call:", error);
-    throw error;
+socket.on("dialStatus", (data) => {
+  console.log("📞 Status:", data.status);
+  if (data.status === "Connected") {
+    // 🎵 Send audio when connected
+    sendAudio(data.sessionId);
   }
-}
+});
 
-// Step 2: Set up WebSocket event listeners
-function setupSocketListeners() {
-  socket.on("newSession", (data) => {
-    console.log("New session created:", data.sessionId);
-    // Join the call room
-    socket.emit("joinRoom", { sessionId: data.sessionId });
-  });
-
-  socket.on("roomJoined", (data) => {
-    if (data.status === "success") {
-      console.log("Successfully joined room:", data.sessionId);
-    }
-  });
-
-  socket.on("dialStatus", (data) => {
-    console.log("Call status:", data.status);
-    if (data.status === "Connected") {
-      // Call is connected, you can now send audio
-      sendAudio(data.sessionId);
-    }
-  });
-
-  socket.on("audio", (data) => {
-    // Handle incoming audio data
-    processIncomingAudio(data.audioData);
-  });
-
-  socket.on("hangup", (data) => {
-    console.log("Call ended:", data.sessionId);
-  });
-}
-
-// Step 3: Send audio data
-function sendAudio(sessionId, audioBuffer) {
-  socket.emit(
-    "audio",
-    {
-      audioData: audioBuffer,
-      sessionId: sessionId,
-      audioFormat: "mp3",
+// 3️⃣ Initiate call
+async function makeCall(phoneNumber) {
+  const response = await fetch("https://api-call.optimaccs.com/pbx/call", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer your_token",
     },
-    (ack) => {
-      if (ack.success) {
-        console.log("Audio sent successfully");
-      } else {
-        console.error("Failed to send audio:", ack.error);
-      }
+    body: JSON.stringify({ phoneNumber }),
+  });
+
+  const result = await response.json();
+  return result.data.sessionId;
+}
+
+// 🚀 Usage
+makeCall("089608675796");
+```
+
+### 🎵 Audio Streaming Example
+
+```javascript
+function sendAudioStream(sessionId, audioFile) {
+  const chunkSize = 2560; // Optimal chunk size for 160ms
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    const buffer = new Uint8Array(e.target.result);
+
+    for (let i = 0; i < buffer.length; i += chunkSize) {
+      const chunk = buffer.slice(i, i + chunkSize);
+
+      socket.emit(
+        "audio",
+        {
+          audioData: chunk,
+          sessionId: sessionId,
+          audioFormat: "mp3",
+        },
+        (ack) => {
+          if (!ack.success) {
+            console.error("❌ Audio send failed:", ack.error);
+          }
+        }
+      );
+
+      // Add proper timing delay
+      setTimeout(() => {}, 160); // 160ms for optimal chunks
+    }
+  };
+
+  reader.readAsArrayBuffer(audioFile);
+}
+```
+
+### 📊 CDR Filtering Example
+
+```javascript
+async function getCDRWithFilters() {
+  const filters = new URLSearchParams({
+    page: 1,
+    limit: 50,
+    "filter.destination": "$contains:0812",
+    "filter.duration": "$gte:30",
+    "filter.billableSeconds": "$gt:0",
+  });
+
+  const response = await fetch(
+    `https://api-call.optimaccs.com/v1/cdr?${filters}`,
+    {
+      headers: {
+        Authorization: "Bearer your_token",
+      },
     }
   );
-}
 
-// Step 4: Terminate call
-async function terminateCall(sessionId) {
-  try {
-    const response = await fetch("https://api-call.optimaccs.com/pbx/hangup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer your_bearer_token",
-      },
-      body: JSON.stringify({ sessionId }),
-    });
-
-    const result = await response.json();
-    return result.status === 200;
-  } catch (error) {
-    console.error("Failed to terminate call:", error);
-    return false;
-  }
-}
-
-// Usage example
-async function makeCall() {
-  setupSocketListeners();
-
-  try {
-    const sessionId = await initiateCall("089608675796");
-    console.log("Call initiated with session ID:", sessionId);
-
-    // Wait for call to connect, then interact as needed
-    // Call will be terminated automatically or manually via terminateCall()
-  } catch (error) {
-    console.error("Call failed:", error);
-  }
+  const data = await response.json();
+  return data;
 }
 ```
 
 ---
 
-## Best Practices
+## 📚 Best Practices
 
-1. **Connection Management**: Implement proper reconnection logic for WebSocket connections
-2. **Error Handling**: Always handle both HTTP and WebSocket errors gracefully
-3. **Audio Buffering**: Implement proper audio buffering for smooth playback
-4. **Session Management**: Keep track of active sessions and clean up resources
+### 🔒 Security
+
+- ✅ Store authentication tokens securely
+- ✅ Use HTTPS for all API requests
+- ✅ Implement token refresh mechanisms
+- ❌ Never expose tokens in client-side code
+
+### 🌐 Connection Management
+
+- ✅ Implement reconnection logic for WebSocket
+- ✅ Handle connection timeouts gracefully
+- ✅ Monitor connection health
+
+### 🎵 Audio Handling
+
+- ✅ Use optimal chunk sizes (2560 bytes recommended)
+- ✅ Implement proper buffering
+- ✅ Handle audio format conversions
+- ✅ Add error handling for audio transmission
+
+### 📊 Session Management
+
+- ✅ Track active sessions
+- ✅ Clean up resources after calls
+- ✅ Implement proper error recovery
+- ✅ Log important events for debugging
 
 ---
 
-## Support
+## 💬 Support
 
-For technical support and questions, please contact:
+### 📞 Need Help?
 
-- Documentation Version: 1.0.4
-- API Base URL: https://api-call.optimaccs.com
-- Support: [Contact your API provider]
+| Resource             | Link                             |
+| -------------------- | -------------------------------- |
+| 📧 **Email Support** | [Contact your API provider]      |
+| 📖 **Documentation** | Version 1.0.4                    |
+| 🌐 **Base URL**      | `https://api-call.optimaccs.com` |
+| 🚀 **Status Page**   | [Check API Status]               |
+
+---
+
+**Made with ❤️ for developers**

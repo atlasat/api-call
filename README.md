@@ -1,8 +1,6 @@
 # 📞 Outgoing Call Service API Documentation
 
 ![Version](https://img.shields.io/badge/version-1.0.4-blue.svg?cacheSeconds=2592000)
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![API](https://img.shields.io/badge/API-REST%20%2B%20WebSocket-orange.svg)
 
 **A comprehensive solution for managing voice calls through REST endpoints and real-time WebSocket communication.**
@@ -422,7 +420,7 @@ socket.on("dialStatus", (data) => {
   /*
   data: {
     sessionId: '07475d2c-32c9-4f4b-8103-6db8c0dc741f',
-    status: 'Dialing' // 'Dialing', 'Ringing', 'Busy', 'Connected'
+    status: 'Dialing' // 'Dialing', 'Ringing', 'Busy', 'Connected', 'Failed'
   }
   */
 });
@@ -441,6 +439,7 @@ socket.on("dialStatus", (data) => {
 - 📞 `Ringing` — Destination is ringing
 - 🚫 `Busy` — Destination is busy
 - ✅ `Connected` — Call successfully answered
+- ❌ `Failed` — Call failed
 
 ---
 
@@ -661,8 +660,20 @@ This table shows how chunk sizes affect transmission timing and efficiency over 
 | 2560  | 8×      | 160 ms        | 160 ms          | ⭐ **OPTIMAL**     |
 | 2880  | 9×      | 180 ms        | 180 ms          | High efficiency    |
 
-> ⚖️ Recommendation: 2560-byte packets (160 ms) provide the best
+> ⚖️ Recommendation: 2560-byte packets (160 ms) provide the best in condition network latency range 0 - 1ms
 > trade-off between latency and transmission overhead in most VoIP or streaming scenarios.
+
+#### Best Practice
+
+Packet size optimal: 2560 bytes (160 ms)
+
+**ℹ️ Important Note:**
+
+The chunk duration of 160 ms refers to the amount of audio contained within each packet, not the total latency experienced by the user.
+The actual total latency is calculated as:
+Total Latency = Chunk Duration + Network Latency (client ↔ server)
+
+> ⚠️ If the network latency is 50 ms, (160ms - 50ms) the maximum timing duration should be approximately 100 ms.
 
 #### ✅ Acknowledgment Response:
 
@@ -950,7 +961,6 @@ async function getCDRWithFilters() {
 
 - ✅ Store authentication tokens securely
 - ✅ Use HTTPS for all API requests
-- ✅ Implement token refresh mechanisms
 - ❌ Never expose tokens in client-side code
 
 ### 🌐 Connection Management
@@ -958,6 +968,7 @@ async function getCDRWithFilters() {
 - ✅ Implement reconnection logic for WebSocket
 - ✅ Handle connection timeouts gracefully
 - ✅ Monitor connection health
+- ✅ Disconnect socket.io with timeout after `hangup` or `cdr` event
 
 ### 🎵 Audio Handling
 
@@ -981,7 +992,7 @@ async function getCDRWithFilters() {
 
 | Resource             | Link                             |
 | -------------------- | -------------------------------- |
-| 📧 **Email Support** | [Contact your API provider]      |
+| 📧 **Email Support** | noc@atlasat.co.id                |
 | 📖 **Documentation** | Version 1.0.4                    |
 | 🌐 **Base URL**      | `https://api-call.optimaccs.com` |
 | 🚀 **Status Page**   | [Check API Status]               |

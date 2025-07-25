@@ -194,9 +194,22 @@ Fetches a list of Call Detail Records (CDRs) with support for pagination and fil
 
 - **Operators:** `$eq`, `$gt`, `$gte`, `$lt`, `$lte`
 - **Examples:**
+
   ```
   /v1/cdr?filter.billableSeconds=$gt:30
   /v1/cdr?filter.billableSeconds=$lte:180
+  ```
+
+</details>
+
+<details>
+  <summary><strong>🧾 Disposition Filters</strong></summary>
+
+- **Operators:** `$eq`, `$in`
+- **Examples:**
+  ```
+  /v1/cdr?filter.disposition=$eq:ANSWERED
+  /v1/cdr?filter.disposition=$in:ANSWERED,NO ANSWER,FAILED
   ```
   </details>
 
@@ -222,9 +235,9 @@ GET /v1/cdr?page=1&limit=10&filter.destination=$contains:0812&filter.duration=$g
       "duration": 24,
       "billableSeconds": 0,
       "disposition": "NO ANSWER",
-      "hangupBy": null,
-      "hangupCauseCode": 16,
-      "hangupCauseText": "Normal Clearing",
+      "hangupBy": "CALLEE",
+      "hangupCauseCode": 18,
+      "hangupCauseText": "No response from destination",
       "createdAt": "2025-07-23T03:38:22.000Z",
       "updatedAt": "2025-07-23T03:38:22.000Z"
   },
@@ -284,9 +297,9 @@ GET /v1/cdr/0198355b-f324-718b-95a4-625c43c654bc
     "duration": 24,
     "billableSeconds": 0,
     "disposition": "NO ANSWER",
-    "hangupBy": null,
-    "hangupCauseCode": 0,
-    "hangupCauseText": "Unknown",
+    "hangupBy": "CALLEE",
+    "hangupCauseCode": 18,
+    "hangupCauseText": "No response from destination",
     "createdAt": "2025-07-23T03:38:22.000Z",
     "updatedAt": "2025-07-23T03:38:22.000Z"
   }

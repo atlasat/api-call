@@ -1,6 +1,6 @@
 # 📞 Outgoing Call Service API Documentation
 
-![Version](https://img.shields.io/badge/version-1.0.4-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-1.0.5-blue.svg?cacheSeconds=2592000)
 ![API](https://img.shields.io/badge/API-REST%20%2B%20WebSocket-orange.svg)
 
 **A comprehensive solution for managing voice calls through REST endpoints and real-time WebSocket communication.**
@@ -12,6 +12,7 @@
 ## 📋 Table of Contents
 
 - [🎯 Overview](#-overview)
+- [🎯 Overview](#-breaking-changes-summary)
 - [🔐 Authentication](#-authentication)
 - [🌐 REST API Endpoints](#-rest-api-endpoints)
 - [🔌 WebSocket Integration](#-websocket-integration)
@@ -24,6 +25,60 @@
 ## 🎯 Overview
 
 The Outgoing Call API provides a comprehensive solution for managing voice calls through REST endpoints and real-time WebSocket communication. This service enables applications to initiate outbound calls, manage call sessions, and handle bi-directional audio streaming.
+
+# Migration Guide: Audio Streaming Changes
+
+This guide describes the required client-side changes for migrating to the latest version of the audio streaming API.
+
+---
+
+## Overview
+
+The audio streaming interface has introduced **breaking changes** that affect:
+
+1. Supported audio codecs
+2. Acknowledgment behavior for the `audio` event
+
+Clients must update their implementations to maintain compatibility.
+
+---
+
+## Breaking Changes Summary
+
+| Area            | Previous Behavior                          | New Behavior                   |
+| --------------- | ------------------------------------------ | ------------------------------ |
+| Audio codec     | `mp3`, `ulaw`, `alaw`, `pcm16`             | `ulaw`, `alaw`, `pcm16` only   |
+| Audio event ACK | Acknowledgment callback returned per event | **No acknowledgment returned** |
+
+---
+
+## 1. Audio Codec Migration
+
+### What Changed
+
+The `mp3` audio format is **no longer supported** for audio streaming.
+
+### Supported Codecs
+
+- `ulaw`
+- `alaw`
+- `pcm16`
+
+### Required Action
+
+Clients must:
+
+- Stop sending audio frames encoded in `mp3`
+- Transcode audio into one of the supported codecs before streaming
+
+### Example (Updated)
+
+```javascript
+socket.emit('audio', {
+  audioData: <Buffer>,
+  sessionId: '<session_id>',
+});
+```
 
 ### ✨ Key Features
 
@@ -40,7 +95,9 @@ The Outgoing Call API provides a comprehensive solution for managing voice calls
 ### 🔗 Base URL
 
 ```
-https://api-call.optimaccs.com
+
+https://voice.optimaccs.com
+
 ```
 
 ## 🔐 Authentication
@@ -71,27 +128,38 @@ Initiates a new outbound call to the specified phone number.
 
 #### Request Parameters
 
-| Parameter     | Type   | Required | Description                 |
-| ------------- | ------ | -------- | --------------------------- |
-| `phoneNumber` | String | Yes      | Target phone number to call |
+| Parameter      | Type   | Required | Description                                                                                                                                                                                                              |
+| -------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `phoneNumber`  | String | Yes      | Target phone number to call                                                                                                                                                                                              |
+| `timeout`      | Number | No       | The call will automatically be terminated if the callee does not answer within the specified timeout period.The call will automatically be terminated if the callee does not answer within the specified timeout period. |
+| `callerId`     | String | No       | The originating phone number used as the caller ID for the outbound call.                                                                                                                                                |
+| `audio.input`  | String | No       | Specifies the audio codec format used for audio sent **from the client (via WebSocket)** to the server. Supported formats: `ulaw`, `alaw`, `pcm16` default pcm16.                                                        |
+| `audio.output` | String | No       | Specifies the audio codec format used for audio sent **from the server** to the client. Supported formats: `ulaw`, `alaw`, `pcm16` default pcm16.                                                                        |
 
 #### Request Example
 
 ```json
 {
-  "phoneNumber": "089608675796"
+  "phoneNumber": "089608675796",
+  "timeout": 60,
+  "callerId": "+62021928839",
+  "audio": {
+    "input": "pcm16",
+    "output": "pcm16"
+  }
 }
 ```
 
 #### Response Parameters
 
-| Parameter          | Type   | Description                                  |
-| ------------------ | ------ | -------------------------------------------- |
-| `status`           | Number | HTTP status code (200: success, 500: failed) |
-| `errors`           | String | Error message (empty if successful)          |
-| `data`             | Object | Response data containing call details        |
-| `data.phoneNumber` | String | The dialed phone number                      |
-| `data.sessionId`   | String | Unique session identifier                    |
+| Parameter          | Type   | Description                                                          |
+| ------------------ | ------ | -------------------------------------------------------------------- |
+| `status`           | Number | HTTP status code (200: success, 500: failed)                         |
+| `errors`           | String | Error message (empty if successful)                                  |
+| `data`             | Object | Response data containing call details                                |
+| `data.phoneNumber` | String | The dialed phone number                                              |
+| `data.sessionId`   | String | Unique session identifier                                            |
+| `data.endpointUrl` | String | WebSocket or media endpoint URL used to establish the voice session. |
 
 #### Response Example
 
@@ -101,9 +169,74 @@ Initiates a new outbound call to the specified phone number.
   "errors": "",
   "data": {
     "phoneNumber": "089608675796",
-    "sessionId": "bb4ad603-d3d9-4729-929c-7497a617cb26"
+    "sessionId": "bb4ad603-d3d9-4729-929c-7497a617cb26",
+    "endpointUrl": "https://voice-02.optimaccs.com"
   }
 }
+```
+
+Streaming Connection
+
+The data.endpointUrl value must be used to establish a streaming connection for audio transmission.
+Clients are required to connect to this endpoint using either Socket.IO or native WebSocket, depending on the integration method.
+
+```curl
+Base URL: https://voice-02.optimaccs.com
+WebSocket Path: /ws/{session_id}
+```
+
+implement socket.io client
+
+```javascript
+import { io } from "socket.io-client";
+
+const sessionId = "019cb6c2-4f21-7893-ab76-d9442aad1ef6";
+const endpointUrl = "https://voice-02.optimaccs.com";
+
+const socket = io(endpointUrl, {
+  transports: ["websocket"],
+  auth: { token: "your_bearer_token" },
+});
+
+socket.on("connect", () => {
+  console.log("Socket.IO connected:", socket.id);
+  socket.emit("joinRoom", { sessionId: sessionId });
+});
+
+socket.on("disconnect", () => {
+  console.log("Socket.IO disconnected");
+});
+
+socket.on("error", (err) => {
+  console.error("Socket.IO error:", err);
+});
+```
+
+Example: Native WebSocket
+
+```javascript
+import WebSocket from "ws";
+
+const sessionId = "019cb6c2-4f21-7893-ab76-d9442aad1ef6";
+const wsUrl = `wss://voice-02.optimaccs.com/ws/${sessionId}`;
+
+const ws = new WebSocket(wsUrl);
+
+ws.on("open", () => {
+  console.log("WebSocket connection established");
+});
+
+ws.on("message", (data) => {
+  console.log("Message received:", data);
+});
+
+ws.on("close", () => {
+  console.log("WebSocket connection closed");
+});
+
+ws.on("error", (err) => {
+  console.error("WebSocket error:", err);
+});
 ```
 
 ### 2. Terminate Call
@@ -228,6 +361,7 @@ GET /v1/cdr?page=1&limit=10&filter.destination=$contains:0812&filter.duration=$g
 "data": [
   {
      "sessionId": "0198355b-f324-718b-95a4-625c43c654bc",
+      "source": null,
       "destination": "0811234678",
       "startTime": "2025-07-23T03:37:56.000Z",
       "answerTime": null,
@@ -290,6 +424,7 @@ GET /v1/cdr/0198355b-f324-718b-95a4-625c43c654bc
   "errors": "",
   "data": {
     "sessionId": "0198355b-f324-718b-95a4-625c43c654bc",
+    "source": null,
     "destination": "089608675796",
     "startTime": "2025-07-23T03:37:56.000Z",
     "answerTime": null,
@@ -311,7 +446,8 @@ GET /v1/cdr/0198355b-f324-718b-95a4-625c43c654bc
 | Field             | Type     | Description                                          |
 | ----------------- | -------- | ---------------------------------------------------- |
 | `sessionId`       | string   | Unique ID for the CDR session.                       |
-| `destination`     | string   | Destination phone number.                            |
+| `source`          | string   | Callee number for inbound / or callerId for outbound |
+| `destination`     | string   | did number for inbound or destination for outbound   |
 | `startTime`       | datetime | Time the call was initiated.                         |
 | `answerTime`      | datetime | Time the call was answered (null if unanswered).     |
 | `endTime`         | datetime | Time the call ended.                                 |
@@ -324,7 +460,7 @@ GET /v1/cdr/0198355b-f324-718b-95a4-625c43c654bc
 | `createdAt`       | datetime | Record creation time.                                |
 | `updatedAt`       | datetime | Last update time for the record.                     |
 
-## 🔌 WebSocket Integration
+## 🔌 WebSocket Integration (Socket.io)
 
 Real-time communication using Socket.IO for live call management and audio streaming.
 
@@ -341,7 +477,8 @@ const SOCKET_CONFIG = {
   },
 };
 
-const SERVER_URL = "https://api-call.optimaccs.com";
+//The streaming server URL must be obtained from the `endpointUrl` field returned by the `POST /pbx/call` API and used to establish the media connection. example:
+const SERVER_URL = "https://voice-01.optimaccs.com";
 const socket = io(SERVER_URL, SOCKET_CONFIG);
 ```
 
@@ -488,7 +625,6 @@ socket.on("audio", (data) => {
   data: {
     sessionId: '07475d2c-32c9-4f4b-8103-6db8c0dc741f',
     audioData: <Buffer 33 29 12 94> // Buffer type
-    audioFormat: 'pcm16'
   }
   */
 });
@@ -503,11 +639,10 @@ socket.on("audio", (data) => {
 
 #### Payload Parameters
 
-| Field         | Type   | Description                               |
-| ------------- | ------ | ----------------------------------------- |
-| `sessionId`   | String | Unique identifier for the call session.   |
-| `audioData`   | Buffer | Audio buffer in 16-bit linear PCM format. |
-| `audioFormat` | String | type of audio pcm16                       |
+| Field       | Type   | Description                               |
+| ----------- | ------ | ----------------------------------------- |
+| `sessionId` | String | Unique identifier for the call session.   |
+| `audioData` | Buffer | Audio buffer in 16-bit linear PCM format. |
 
 ### ✅ `checkPoint`
 
@@ -561,6 +696,7 @@ socket.on("cdr", (cdr) => {
   /*
   cdr: {
     sessionId: '07475d2c-32c9-4f4b-8103-6db8c0dc741f',
+    source: null,
     destination: '0811234567',
     startTime: 2025-07-23T05:17:28.000Z,
     answerTime: 2025-07-23T05:17:34.000Z,
@@ -581,7 +717,8 @@ socket.on("cdr", (cdr) => {
 | Field             | Description                                                                |
 | ----------------- | -------------------------------------------------------------------------- |
 | `sessionId`       | Unique identifier for the call session                                     |
-| `destination`     | Destination number or party being called                                   |
+| `source`          | Callee number for inbound / or callerId for outbound                       |
+| `destination`     | did number for inbound or destination for outbound                         |
 | `startTime`       | Timestamp when the call was initiated                                      |
 | `answerTime`      | Timestamp when the call was answered                                       |
 | `endTime`         | Timestamp when the call ended (hangup occurred)                            |
@@ -635,24 +772,15 @@ This interface supports multiple audio formats commonly used in telephony system
 socket.emit('audio', {
   audioData: <Buffer 33 29 12 94>,
   sessionId: '07475d2c-32c9-4f4b-8103-6db8c0dc741f',
-  audioFormat: 'mp3', // 'mp3', 'ulaw', 'alaw', 'pcm16'
-}, (acknowledgment) => {
-  /*
-  acknowledgment: {
-    success: true,
-    error: null
-  }
-  */
 });
 ```
 
 #### 📘 Payload Parameters:
 
-| Field         | Type     | Description                                                                        |
-| ------------- | -------- | ---------------------------------------------------------------------------------- |
-| `audioData`   | `Buffer` | The binary audio payload. Must conform to the format and timing expectations.      |
-| `sessionId`   | `string` | The unique identifier of the call session currently in progress.                   |
-| `audioFormat` | `string` | Format of the audio data. Accepted values: `'mp3'`, `'ulaw'`, `'alaw'`, `'pcm16'`. |
+| Field       | Type     | Description                                                                   |
+| ----------- | -------- | ----------------------------------------------------------------------------- |
+| `audioData` | `Buffer` | The binary audio payload. Must conform to the format and timing expectations. |
+| `sessionId` | `string` | The unique identifier of the call session currently in progress.              |
 
 #### ⏱️ Audio Timing and Chunk Size
 
@@ -687,13 +815,6 @@ The actual total latency is calculated as:
 Total Latency = Chunk Duration + Network Latency (client ↔ server)
 
 > ⚠️ If the network latency is 50 ms, (160ms - 50ms) the maximum timing duration should be approximately 100 ms.
-
-#### ✅ Acknowledgment Response:
-
-| Field     | Type               | Description                                                   |
-| --------- | ------------------ | ------------------------------------------------------------- |
-| `success` | `boolean`          | Indicates whether the audio chunk was successfully processed. |
-| `error`   | `string` or `null` | Returns error message if transmission failed.                 |
 
 ---
 
@@ -828,25 +949,261 @@ socket.emit("hangup", {
 
 ---
 
+## Websocket
+
+### Establish WebSocket Connection
+
+```javascript
+import WebSocket from "ws";
+
+const sessionId = "019cb6f7-ffb0-7801-96c0-6b5ca0f2f5c4";
+const SERVER_URL = "wss://voice-01.optimaccs.com"; // Retrieved from `data.endpointUrl`
+
+const ws = new WebSocket(`${SERVER_URL}/ws/${sessionId}`, {
+  headers: {
+    Authorization: `Bearer ${process.env.API_KEY}`,
+  },
+});
+
+ws.on("open", () => {
+  console.log("✅ Connected to WebSocket server");
+});
+```
+
+### Receive Messages from Server
+
+```javascript
+ws.on("message", (data, isBinary) => {
+  if (!isBinary) {
+    const text = data.toString("utf8");
+    try {
+      const message = JSON.parse(text);
+      console.log("📨 Received message:", message);
+    } catch {
+      console.log("📨 Received text:", text);
+    }
+  } else {
+    console.log("📨 Received binary data:", data);
+    ws.send(data); //send back audio as binary data
+  }
+});
+
+ws.on("close", () => {
+  console.log("❌ WebSocket connection closed");
+});
+
+ws.on("error", (err) => {
+  console.error("WebSocket error:", err);
+});
+```
+
+## Send Events to Server
+
+### Send Dtmf
+
+```javascript
+ws.send(
+  JSON.stringify({
+    event: "dtmf",
+    data: {
+      digit: "4",
+      duration: 500,
+    },
+  }),
+);
+```
+
+Description
+Sends a DTMF digit to the active call session.
+
+#### Send Hangup
+
+```javascript
+ws.send(
+  JSON.stringify({
+    event: "hangup",
+  }),
+);
+```
+
+Description
+Terminates the active call session.
+
+#### Send Interruption
+
+```javascript
+ws.send(
+  JSON.stringify({
+    event: "interruption",
+  }),
+);
+```
+
+Description
+Interrupts the current audio playback or streaming process.
+
+#### Send Checkpoint
+
+```javascript
+ws.send(
+  JSON.stringify({
+    event: "checkPoint",
+    data: "test check point interruption",
+  }),
+);
+```
+
+#### Send Audio (Binary Frame)
+
+Audio data must be sent as binary WebSocket frames.
+The audio codec is negotiated during the initial call setup via POST /pbx/call.
+
+- Default audio format: pcm16
+- The server will interpret all incoming binary frames according to the configured audio.input codec.
+
+```javascript
+ws.send(Buffer.from(320));
+```
+
+Example: Send PCM16 Audio (Node.js)
+
+```javascript
+import fs from "fs";
+import WebSocket from "ws";
+
+const ws = new WebSocket(`wss://voice-01.optimaccs.com/ws/{sessionId}`, {
+  headers: {
+    Authorization: `Bearer ${process.env.API_KEY}`,
+  },
+});
+
+ws.on("open", () => {
+  console.log("🎵 Starting audio stream");
+
+  // Read raw PCM16 audio file (16-bit signed, little-endian)
+  const audioStream = fs.createReadStream("audio.pcm");
+
+  audioStream.on("data", (chunk) => {
+    // Send raw binary audio frame
+    ws.send(chunk);
+  });
+
+  audioStream.on("end", () => {
+    console.log("🎵 Audio stream ended");
+  });
+});
+```
+
+Description
+Sends a checkpoint marker for tracking or logging purposes.
+
+## Receive Event from Server
+
+#### Dial Status Events
+
+```json
+{
+  "event": "dialStatus",
+  "data": {
+    "sessionId": "019cb6f7-ffb0-7801-96c0-6b5ca0f2f5c4",
+    "status": "Dialing"
+  }
+}
+```
+
+```json
+{
+  "event": "dialStatus",
+  "data": {
+    "sessionId": "019cb6f7-ffb0-7801-96c0-6b5ca0f2f5c4",
+    "status": "Ringing"
+  }
+}
+```
+
+```json
+{
+  "event": "dialStatus",
+  "data": {
+    "sessionId": "019cb6f7-ffb0-7801-96c0-6b5ca0f2f5c4",
+    "status": "Connected"
+  }
+}
+```
+
+#### Checkpoint Event
+
+```json
+{
+  "event": "CheckPoint",
+  "data": "test check point interruption"
+}
+```
+
+#### DTMF Event
+
+```json
+{
+  "event": "dtmf",
+  "data": {
+    "sessionId": "019cb6f7-ffb0-7801-96c0-6b5ca0f2f5c4",
+    "digit": "4"
+  }
+}
+```
+
+#### Call Detail Record (CDR)
+
+```json
+{
+  "event": "cdr",
+  "data": {
+    "sessionId": "019cb6f7-ffb0-7801-96c0-6b5ca0f2f5c4",
+    "source": null,
+    "destination": "5000",
+    "startTime": "2026-03-04T03:50:32.000Z",
+    "answerTime": "2026-03-04T03:50:38.000Z",
+    "endTime": "2026-03-04T03:50:48.000Z",
+    "duration": 16,
+    "billableSeconds": 10,
+    "disposition": "ANSWERED",
+    "hangupBy": "CALLEE",
+    "hangupCauseCode": 16,
+    "hangupCauseText": "Call terminated normally (usually by remote party)"
+  }
+}
+```
+
+#### Hangup Event
+
+```json
+{
+  "event": "hangup"
+}
+```
+
 ## ⚠️ Error Handling
 
 ### 🚦 HTTP Status Codes
 
-| Code   | Status       | Description                    |
-| ------ | ------------ | ------------------------------ |
-| ✅ 200 | Success      | Request completed successfully |
-| ❌ 400 | Bad Request  | Invalid parameters             |
-| 🔒 401 | Unauthorized | Invalid or missing token       |
-| 🔍 404 | Not Found    | Resource not found             |
-| 💥 500 | Server Error | Internal server error          |
+| Code   | Status               | Description                                                                                            |
+| ------ | -------------------- | ------------------------------------------------------------------------------------------------------ |
+| ✅ 200 | Success              | Request completed successfully                                                                         |
+| ❌ 400 | Bad Request          | Invalid parameters                                                                                     |
+| ❌ 422 | Unprocessable Entity | The request is syntactically valid but contains semantically invalid or unacceptable parameter values. |
+| 🔒 401 | Unauthorized         | Invalid or missing token                                                                               |
+| 🔍 404 | Not Found            | Resource not found                                                                                     |
+| 💥 500 | Server Error         | Internal server error                                                                                  |
 
 ### Common Error Responses
 
 ```json
 {
-  "status": 400,
-  "errors": "Invalid phone number format",
-  "data": null
+  "code": 422,
+  "message": "Validation failed",
+  "errors": {
+    "phoneNumber": ["Phone Number containing only digits."]
+  }
 }
 ```
 
@@ -866,28 +1223,10 @@ socket.emit("hangup", {
 
 ```javascript
 // 1️⃣ Initialize connection
-const socket = io("https://api-call.optimaccs.com", {
-  transports: ["websocket"],
-  auth: { token: "your_bearer_token" },
-});
-
-// 2️⃣ Set up event listeners
-socket.on("newSession", (data) => {
-  console.log("🆕 New session:", data.sessionId);
-  socket.emit("joinRoom", { sessionId: data.sessionId });
-});
-
-socket.on("dialStatus", (data) => {
-  console.log("📞 Status:", data.status);
-  if (data.status === "Connected") {
-    // 🎵 Send audio when connected
-    sendAudio(data.sessionId);
-  }
-});
 
 // 3️⃣ Initiate call
 async function makeCall(phoneNumber) {
-  const response = await fetch("https://api-call.optimaccs.com/pbx/call", {
+  const response = await fetch("https://voice.optimaccs.com/pbx/call", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -897,47 +1236,74 @@ async function makeCall(phoneNumber) {
   });
 
   const result = await response.json();
-  return result.data.sessionId;
-}
-
-// 🚀 Usage
-makeCall("089608675796");
-```
-
-### 🎵 Audio Streaming Example
-
-```javascript
-function sendAudioStream(sessionId, audioFile) {
-  const chunkSize = 2560; // Optimal chunk size for 160ms
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    const buffer = new Uint8Array(e.target.result);
-
-    for (let i = 0; i < buffer.length; i += chunkSize) {
-      const chunk = buffer.slice(i, i + chunkSize);
-
-      socket.emit(
-        "audio",
-        {
-          audioData: chunk,
-          sessionId: sessionId,
-          audioFormat: "mp3",
-        },
-        (ack) => {
-          if (!ack.success) {
-            console.error("❌ Audio send failed:", ack.error);
-          }
-        }
-      );
-
-      // Add proper timing delay
-      setTimeout(() => {}, 160); // 160ms for optimal chunks
-    }
+  return {
+    sessionId: result.data.sessionId,
+    endpointUrl: result.data.endpointUrl,
   };
-
-  reader.readAsArrayBuffer(audioFile);
 }
+
+function sendAudio(socket, sessionId) {
+  socket.emit("audio", {
+    sessionid: sessionId,
+    audioData: Buffer.from(320), //example binary data
+  });
+}
+
+// 🚀 Usage example socket.io
+const { sessionId, endpointUrl } = makeCall("089608675796");
+
+const socket = io(endpointUrl, {
+  transports: ["websocket"],
+  auth: { token: "your_bearer_token" },
+});
+
+// 2️⃣ Set up event listeners
+socket.on("newSession", (data) => {
+  console.log("🆕 New session:", sessionId);
+  socket.emit("joinRoom", { sessionId: sessionId });
+});
+
+socket.on("dialStatus", (data) => {
+  console.log("📞 Status:", data.status);
+  if (data.status === "Connected") {
+    // 🎵 Send audio when connected
+    sendAudio(socket, data.sessionId);
+  }
+});
+
+// or example for websocket
+import WebSocket from "ws";
+const ws = new WebSocket(`{endpointUrl}/ws/{sessionId}`, {
+  headers: {
+    Authorization: `Bearer ${process.env.API_KEY}`,
+  },
+});
+
+ws.on("open", () => {
+  console.log("🎵 Starting audio stream");
+
+  // Read raw PCM16 audio file (16-bit signed, little-endian)
+  const audioStream = fs.createReadStream("audio.pcm");
+
+  audioStream.on("data", (chunk) => {
+    // Send raw binary audio frame
+    ws.send(chunk);
+  });
+
+  audioStream.on("end", () => {
+    console.log("🎵 Audio stream ended");
+  });
+});
+
+ws.on("message", (data, isBinary) => {
+  if (isBinary) {
+    //data is audio
+    console.log("audio", data);
+  } else {
+    //parse data as event, data is json
+    const json = JSON.parse(data);
+  }
+});
 ```
 
 ### 📊 CDR Filtering Example
@@ -953,12 +1319,12 @@ async function getCDRWithFilters() {
   });
 
   const response = await fetch(
-    `https://api-call.optimaccs.com/v1/cdr?${filters}`,
+    `https://voice.optimaccs.com/v1/cdr?${filters}`,
     {
       headers: {
         Authorization: "Bearer your_token",
       },
-    }
+    },
   );
 
   const data = await response.json();
@@ -1003,13 +1369,11 @@ async function getCDRWithFilters() {
 
 ### 📞 Need Help?
 
-| Resource             | Link                             |
-| -------------------- | -------------------------------- |
-| 📧 **Email Support** | noc@atlasat.co.id                |
-| 📖 **Documentation** | Version 1.0.4                    |
-| 🌐 **Base URL**      | `https://api-call.optimaccs.com` |
-| 🚀 **Status Page**   | [Check API Status]               |
+| Resource             | Link                          |
+| -------------------- | ----------------------------- |
+| 📧 **Email Support** | noc@atlasat.co.id             |
+| 📖 **Documentation** | Version 1.0.5                 |
+| 🌐 **Base URL**      | `https://voice.optimaccs.com` |
+| 🚀 **Status Page**   | [Check API Status]            |
 
 ---
-
-**Made with ❤️ for developers**

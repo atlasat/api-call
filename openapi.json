@@ -1,0 +1,457 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Outgoing Call Service API",
+    "version": "1.0.5",
+    "description": "OpenAPI spec generated from README.md"
+  },
+  "servers": [
+    {
+      "url": "https://voice.optimaccs.com",
+      "description": "Primary REST API"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/pbx/call": {
+      "post": {
+        "tags": [
+          "Call"
+        ],
+        "summary": "Initiate outgoing call",
+        "operationId": "initiateOutgoingCall",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateCallRequest"
+              },
+              "example": {
+                "phoneNumber": "089608675796",
+                "timeout": 60,
+                "callerId": "+62021928839",
+                "audio": {
+                  "input": "pcm16",
+                  "output": "pcm16"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Call initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateCallResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to initiate call",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pbx/hangup": {
+      "post": {
+        "tags": [
+          "Call"
+        ],
+        "summary": "Terminate active call",
+        "operationId": "terminateCall",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HangupRequest"
+              },
+              "example": {
+                "sessionId": "bb4ad603-d3d9-4729-929c-7497a617cb26"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Call terminated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HangupResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to terminate call",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cdr": {
+      "get": {
+        "tags": [
+          "CDR"
+        ],
+        "summary": "Retrieve CDR list",
+        "operationId": "getCdrList",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          },
+          {
+            "name": "filter.destination",
+            "in": "query",
+            "required": false,
+            "description": "Operators: $eq, $contains. Example: $contains:0812",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter.duration",
+            "in": "query",
+            "required": false,
+            "description": "Operators: $eq, $gt, $gte, $lt, $lte. Example: $gte:60",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter.billableSeconds",
+            "in": "query",
+            "required": false,
+            "description": "Operators: $eq, $gt, $gte, $lt, $lte. Example: $gt:30",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter.disposition",
+            "in": "query",
+            "required": false,
+            "description": "Operators: $eq, $in. Example: $in:ANSWERED,NO ANSWER,FAILED",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CDR list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CdrListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cdr/{sessionId}": {
+      "get": {
+        "tags": [
+          "CDR"
+        ],
+        "summary": "Get CDR detail by session ID",
+        "operationId": "getCdrDetail",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CDR detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CdrDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AudioCodec": {
+        "type": "string",
+        "enum": [
+          "ulaw",
+          "alaw",
+          "pcm16"
+        ]
+      },
+      "InitiateCallRequest": {
+        "type": "object",
+        "required": [
+          "phoneNumber"
+        ],
+        "properties": {
+          "phoneNumber": {
+            "type": "string"
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Auto hangup timeout in seconds if unanswered"
+          },
+          "callerId": {
+            "type": "string"
+          },
+          "audio": {
+            "type": "object",
+            "properties": {
+              "input": {
+                "$ref": "#/components/schemas/AudioCodec",
+                "default": "pcm16"
+              },
+              "output": {
+                "$ref": "#/components/schemas/AudioCodec",
+                "default": "pcm16"
+              }
+            }
+          }
+        }
+      },
+      "InitiateCallResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "errors": {
+            "type": "string",
+            "example": ""
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "phoneNumber": {
+                "type": "string"
+              },
+              "sessionId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "endpointUrl": {
+                "type": "string",
+                "format": "uri",
+                "description": "Use this URL to establish websocket/socket.io streaming connection"
+              }
+            }
+          }
+        }
+      },
+      "HangupRequest": {
+        "type": "object",
+        "required": [
+          "sessionId"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "HangupResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "errors": {
+            "type": "string",
+            "example": ""
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "sessionId": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      },
+      "CdrRecord": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "source": {"type": "string", "nullable": true},
+          "destination": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "answerTime": {"type": "string", "format": "date-time", "nullable": true},
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "duration": {
+            "type": "integer"
+          },
+          "billableSeconds": {
+            "type": "integer"
+          },
+          "disposition": {
+            "type": "string"
+          },
+          "hangupBy": {
+            "type": "string"
+          },
+          "hangupCauseCode": {
+            "type": "integer"
+          },
+          "hangupCauseText": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CdrListMeta": {
+        "type": "object",
+        "properties": {
+          "itemsPerPage": {
+            "type": "integer"
+          },
+          "totalItems": {
+            "type": "integer"
+          },
+          "currentPage": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "sortBy": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "CdrListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CdrRecord"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CdrListMeta"
+          }
+        }
+      },
+      "CdrDetailResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "errors": {
+            "type": "string",
+            "example": ""
+          },
+          "data": {
+            "$ref": "#/components/schemas/CdrRecord"
+          }
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 500
+          },
+          "errors": {
+            "type": "string"
+          },
+          "data": {"type": "object", "nullable": true}
+        }
+      }
+    }
+  }
+}
+
